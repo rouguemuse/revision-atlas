@@ -1,0 +1,1239 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Revision Atlas — Private Manuscript Continuity & Revision Studio</title>
+  <link rel="stylesheet" href="studio.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><rect x='2' y='2' width='9' height='9' rx='2' fill='%23244d3f'/><rect x='13' y='2' width='9' height='9' rx='2' fill='%235e3c54'/><rect x='2' y='13' width='9' height='9' rx='2' fill='%2392602c'/><rect x='13' y='13' width='9' height='9' rx='2' fill='%231c4e5e'/></svg>">
+</head>
+<body>
+
+  <!-- HISTORICAL READ-ONLY VERSION WARNING BANNER -->
+  <div id="historical-view-banner" class="historical-view-banner">
+    <div>
+      ⚠️ <strong>Viewing Historical Version:</strong> <span id="banner-version-name">Draft</span> 
+      (<span id="banner-version-meta">Read-Only</span>)
+    </div>
+    <div class="banner-actions">
+      <button class="btn btn-sm" onclick="Atlas.compareHistoricalAgainstActive()">Compare to Active</button>
+      <button class="btn btn-sm" onclick="Atlas.branchHistoricalAsWorking()">Branch as New Working Draft</button>
+      <button class="btn btn-sm btn-primary" onclick="Atlas.returnToActiveWorkingDraft()">Return to Active Draft</button>
+    </div>
+  </div>
+
+  <!-- APPLICATION HEADER CHROME -->
+  <header class="app-header">
+    <div class="brand-section">
+      <!-- 4-QUADRANT MINERAL BRAND MARK -->
+      <svg class="brand-mark-svg" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="2" y="2" width="9" height="9" rx="2" class="brand-quad-1" />
+        <rect x="13" y="2" width="9" height="9" rx="2" class="brand-quad-2" />
+        <rect x="2" y="13" width="9" height="9" rx="2" class="brand-quad-3" />
+        <rect x="13" y="13" width="9" height="9" rx="2" class="brand-quad-4" />
+      </svg>
+      <div class="brand-titles">
+        <span class="brand-wordmark">Revision Atlas</span>
+        <span class="brand-subtitle">Private Manuscript Continuity & Revision Studio</span>
+      </div>
+    </div>
+
+    <!-- PRIMARY RESTRAINED NAVIGATION -->
+    <nav class="primary-nav">
+      <button class="nav-tab-btn active" data-view="write" onclick="Atlas.switchView('write')">
+        <span>✍️</span> Write
+      </button>
+      <button class="nav-tab-btn" data-view="compare" onclick="Atlas.switchView('compare')">
+        <span>⚖️</span> Compare
+      </button>
+      <button class="nav-tab-btn" data-view="fragments" onclick="Atlas.switchView('fragments')">
+        <span>🗂️</span> Fragments
+      </button>
+      <button class="nav-tab-btn" data-view="characters" onclick="Atlas.switchView('characters')">
+        <span>👥</span> Characters
+      </button>
+      <button class="nav-tab-btn" data-view="reference" onclick="Atlas.switchView('reference')">
+        <span>📖</span> Reference
+      </button>
+      <button class="nav-tab-btn" data-view="analyze" onclick="Atlas.switchView('analyze')">
+        <span>🔍</span> Analyze
+      </button>
+    </nav>
+
+    <!-- ACTIVE WORKING DRAFT IDENTITY BADGE & UTILITIES -->
+    <div class="header-actions">
+      <div class="active-draft-identity" id="header-active-draft-badge" onclick="Atlas.switchView('versions')" title="View Version Lineage & History">
+        <div class="active-dot"></div>
+        <span id="current-draft-name" style="font-weight: 600;">Current Revision</span>
+        <span class="version-type-pill type-working" id="current-draft-type">Working</span>
+        <span id="current-draft-edited" style="font-size: 0.7rem; color: var(--text-muted);">Last edited: Sep 14 · 1:11 PM</span>
+      </div>
+
+      <button class="btn btn-sm btn-cloud-pill" id="btn-header-cloud-sync" onclick="Atlas.openCloudSyncModal()" title="Cloud & Google Drive Sync">
+        <span>☁️</span> <span class="header-btn-text">Cloud Sync</span>
+      </button>
+
+      <div class="header-utility-group">
+        <button class="btn btn-sm" onclick="Atlas.openSearchModal()" title="Global Search (Ctrl+K)" aria-label="Global Search">
+          <span>🔎</span> Search
+        </button>
+
+        <button class="btn btn-sm" id="btn-open-guide" title="Studio Guide & Shortcuts (Quick Start, Writing, Revision, Finalization)" aria-label="Open Studio Guide">
+          <span>❓</span> Guide
+        </button>
+
+        <button class="btn-icon" onclick="Atlas.openReadingPrefsModal()" title="Manuscript Typography & Layout" aria-label="Reading Preferences">
+          <span>Aa</span>
+        </button>
+
+        <select class="theme-mode-select" id="theme-mode-selector" onchange="Atlas.setTheme(this.value)" title="Workspace Theme" aria-label="Workspace Theme">
+          <option value="dark">🌙 Dark</option>
+          <option value="light">☀️ Light</option>
+          <option value="system">💻 System</option>
+        </select>
+
+        <button class="btn-icon" onclick="Atlas.openProfileModal()" title="Project Settings & Backups" aria-label="Project Settings">
+          <span>⚙️</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN APPLICATION CONTAINER -->
+  <div class="app-container">
+
+    <!-- ====================================================================
+         VIEW 1: WRITE WORKSPACE (TRI-PANE)
+         ==================================================================== -->
+    <main class="workspace-view write-workspace active" id="view-write">
+      <!-- LEFT: CHAPTER NAVIGATOR -->
+      <aside class="chapter-navigator" id="chapter-navigator">
+        <div class="navigator-header">
+          <div class="navigator-top-row">
+            <div style="display: flex; align-items: center; gap: 0.4rem;">
+              <span class="navigator-title">Chapters (<span id="chapter-count">0</span>)</span>
+              <button class="help-btn" type="button" data-help-topic="chapters" aria-label="Help with chapters" aria-haspopup="dialog" aria-expanded="false">?</button>
+            </div>
+            <div style="display: flex; gap: 0.3rem;">
+              <button class="btn btn-sm" onclick="Atlas.triggerImportChapters()" title="Upload Chapter Files (.txt, .md)">📥 Upload</button>
+              <button class="btn btn-sm" onclick="Atlas.createNewChapter()" title="Add New Chapter">+</button>
+              <button class="btn btn-sm" onclick="Atlas.toggleSidebarCollapse()" title="Collapse Chapter Navigator">◀</button>
+            </div>
+          </div>
+          <!-- NON-GAMIFIED REVISION PROGRESS BAR -->
+          <div class="revision-progress-bar" id="revision-progress-bar">
+            <span class="progress-stat" id="stat-total-words">0 words</span> ·
+            <span class="progress-stat" id="stat-revised" style="color: #10b981;">0 Revised</span> ·
+            <span class="progress-stat" id="stat-in-revision" style="color: #f59e0b;">0 In Revision</span> ·
+            <span class="progress-stat" id="stat-unreviewed" style="color: var(--text-secondary);">0 Unreviewed</span> ·
+            <span class="progress-stat" id="stat-locked" style="color: #a78bfa;">0 Locked</span>
+          </div>
+        </div>
+
+        <div class="chapter-search-box">
+          <input type="text" class="chapter-search-input" id="chapter-search" placeholder="Filter chapters..." oninput="Atlas.filterChapterList(this.value)">
+        </div>
+
+        <div class="chapter-list" id="chapter-list-container">
+          <!-- Populated by Atlas.renderChapterList() -->
+        </div>
+      </aside>
+
+      <!-- CENTER: MANUSCRIPT CANVAS -->
+      <section class="manuscript-canvas-pane">
+        <div class="canvas-toolbar">
+          <div class="toolbar-left">
+            <button class="btn btn-sm" id="btn-toggle-navigator" onclick="Atlas.toggleSidebarCollapse()" title="Toggle Navigator (Left Sidebar)">
+              <span>☰</span> <span class="btn-label-desktop">Navigator</span>
+            </button>
+            <button class="btn btn-sm" id="btn-toggle-focus" onclick="Atlas.toggleFocusMode()" title="Focus Mode: Hide sidebars for distraction-free writing (F11)">
+              <span>⛶</span> <span class="btn-label-desktop">Focus</span>
+            </button>
+            <input type="text" class="manuscript-title-input" id="current-chapter-title" placeholder="Chapter Title" oninput="Atlas.onChapterTitleChange(this.value)" title="Current Chapter Name">
+            <!-- CHAPTER REVISION STATUS CONTROLLER -->
+            <div style="display: flex; align-items: center; gap: 0.25rem;">
+              <select id="chapter-revision-status-select" class="theme-mode-select" onchange="Atlas.setChapterRevisionStatus(this.value)" title="Chapter Revision Status">
+                <option value="Unreviewed">Unreviewed</option>
+                <option value="In Revision">In Revision</option>
+                <option value="Revised">Revised</option>
+                <option value="Locked">Locked</option>
+              </select>
+              <button class="help-btn" type="button" data-help-topic="revisionStatus" aria-label="Help with chapter revision status" aria-haspopup="dialog" aria-expanded="false">?</button>
+            </div>
+          </div>
+
+          <!-- CENTER: PROSE FORMATTING & CLEANING CONTROLS -->
+          <div class="toolbar-formatting">
+            <button class="btn btn-sm btn-format" onclick="Atlas.toggleBold()" title="Bold (Ctrl+B)"><strong>B</strong></button>
+            <button class="btn btn-sm btn-format" onclick="Atlas.toggleItalic()" title="Italic (Ctrl+I)"><em>I</em></button>
+            <button class="btn btn-sm btn-autoformat" onclick="Atlas.autoFormatProse()" title="Auto-Format: Clean inconsistent pasting, align paragraphs, and enforce clean double-spacing">✨ Auto-Format</button>
+            <button class="help-btn" type="button" data-help-topic="formatting" aria-label="Help with formatting and auto-format" aria-haspopup="dialog" aria-expanded="false">?</button>
+          </div>
+
+          <div class="toolbar-right">
+            <!-- LIVE SAVE STATUS & EXPLICIT SAVE BUTTON WITH CLOUD/SYNC DROPDOWN -->
+            <div class="save-indicator-group" id="save-indicator-group" title="Continuous Multi-Destination Persistence">
+              <span class="save-status-pill" id="live-save-status">
+                <span class="save-dot saved" id="save-status-dot"></span>
+                <span id="save-status-text">Saved</span>
+              </span>
+              <div class="save-split-wrap">
+                <button class="btn btn-sm btn-save" id="btn-manual-save" onclick="Atlas.saveNow()" title="Save manuscript now (Ctrl+S)" aria-label="Save manuscript now">
+                  💾 <span>Save</span>
+                </button>
+                <button class="btn btn-sm btn-save-trigger" id="btn-save-dropdown-trigger" onclick="Atlas.toggleSaveMenu(event)" title="Cloud & Drive Backup Options" aria-haspopup="true" aria-expanded="false" aria-label="Open Save and Backup Options Menu" aria-controls="save-dropdown-menu">
+                  ▾
+                </button>
+                <div class="save-dropdown-menu" id="save-dropdown-menu" role="menu" aria-label="Save & Backup Options" hidden>
+                  <div class="save-dropdown-heading" role="presentation">Local Browser Vault</div>
+                  <button type="button" role="menuitem" class="save-dropdown-item" onclick="Atlas.saveNow(); Atlas.closeSaveMenu();">
+                    <span class="save-item-icon">💾</span>
+                    <div class="save-item-body">
+                      <strong>Save to Local Vault</strong>
+                      <small>Instant continuous save to browser IndexedDB (Ctrl+S)</small>
+                    </div>
+                  </button>
+
+                  <div class="save-dropdown-heading" role="presentation">External Backup & Sync</div>
+                  <button type="button" role="menuitem" class="save-dropdown-item" onclick="Atlas.openCloudSyncModal('drive'); Atlas.closeSaveMenu();">
+                    <span class="save-item-icon">☁️</span>
+                    <div class="save-item-body">
+                      <strong>Google Drive Cloud Sync...</strong>
+                      <small>Backup or restore directly to your Google Drive</small>
+                    </div>
+                  </button>
+                  <button type="button" role="menuitem" class="save-dropdown-item" onclick="Atlas.linkLocalDiskFile(); Atlas.closeSaveMenu();">
+                    <span class="save-item-icon">📁</span>
+                    <div class="save-item-body">
+                      <strong>Link Local / Drive File...</strong>
+                      <small>Auto-sync to file in Google Drive/Dropbox folder</small>
+                    </div>
+                  </button>
+
+                  <div class="save-dropdown-divider" role="separator"></div>
+                  <div class="save-dropdown-heading" role="presentation">Portable Exports</div>
+                  <button type="button" role="menuitem" class="save-dropdown-item" onclick="Atlas.exportFullVault(); Atlas.closeSaveMenu();">
+                    <span class="save-item-icon">📦</span>
+                    <div class="save-item-body">
+                      <strong>Download Project Vault</strong>
+                      <small>Full snapshot with versions, notes, characters (.json)</small>
+                    </div>
+                  </button>
+                  <button type="button" role="menuitem" class="save-dropdown-item" onclick="Atlas.exportAllChaptersMarkdown(); Atlas.closeSaveMenu();">
+                    <span class="save-item-icon">📄</span>
+                    <div class="save-item-body">
+                      <strong>Export Manuscript (.md)</strong>
+                      <small>Clean prose export ready for Word or Docs</small>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <span id="chapter-word-count-badge" style="font-size: 0.75rem; color: var(--text-secondary);">0 words</span>
+            <button class="btn btn-sm" onclick="Atlas.openChapterHistoryModal()" title="View Chapter Revision History">🕒 History</button>
+            <button class="btn btn-sm" id="btn-toggle-inspector" onclick="Atlas.toggleInspectorCollapse()" title="Toggle Inspector (Right Sidebar)">
+              <span>ℹ️</span> <span class="btn-label-desktop">Inspector</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="editor-scroll-wrap">
+          <div class="manuscript-paper">
+            <div class="paper-header-group">
+              <span class="chapter-number-label" id="paper-chapter-number">Chapter 1</span>
+              <input type="text" class="chapter-title-paper-input" id="paper-chapter-title" placeholder="Untitled Chapter — Click to name..." oninput="Atlas.onChapterTitleChange(this.value)">
+            </div>
+            <textarea class="manuscript-textarea" id="editor-textarea" placeholder="Begin writing or revising..." oninput="Atlas.onEditorInput(this)" onkeyup="Atlas.updateCursorPosition(this)" onclick="Atlas.updateCursorPosition(this)" onselect="Atlas.updateCursorPosition(this)" onblur="Atlas.updateCursorPosition(this)" onkeydown="Atlas.onEditorKeyDown(event)"></textarea>
+          </div>
+        </div>
+      </section>
+
+      <!-- RIGHT: INSPECTOR PANE -->
+      <aside class="inspector-pane" id="inspector-pane">
+        <nav class="inspector-nav" aria-label="Chapter Inspector Tabs">
+          <button class="inspector-tab-btn active" data-tab="notes" onclick="Atlas.switchInspectorTab('notes')" title="Chapter Notes & Brainstorming" aria-label="Notes">Notes</button>
+          <button class="inspector-tab-btn" data-tab="function" onclick="Atlas.switchInspectorTab('function')" title="Narrative Function & Continuity Engine" aria-label="Function">Function</button>
+          <button class="inspector-tab-btn" data-tab="scenes" onclick="Atlas.switchInspectorTab('scenes')" title="Scene Breakdown & Pacing" aria-label="Scenes">Scenes</button>
+          <button class="inspector-tab-btn" data-tab="motifs" onclick="Atlas.switchInspectorTab('motifs')" title="Active Symbols & Motifs" aria-label="Motifs">Motifs</button>
+        </nav>
+
+        <div class="inspector-content" id="inspector-content">
+          <!-- TAB: NOTES -->
+          <div class="inspector-tab-content" id="tab-notes">
+            <div class="inspector-section">
+              <label class="section-label">Author Notes</label>
+              <textarea class="function-textarea" id="chapter-notes-input" placeholder="Private thoughts, revision priorities, doubts..." oninput="Atlas.saveChapterNotes(this.value)" style="min-height: 120px;"></textarea>
+            </div>
+          </div>
+
+          <!-- TAB: CHAPTER FUNCTION BUILDER -->
+          <div class="inspector-tab-content" id="tab-function" style="display: none;">
+            <!-- QUICK FUNCTION CARD -->
+            <div class="inspector-section">
+              <div class="section-label">
+                <div style="display: flex; align-items: center; gap: 0.4rem;">
+                  <span>Core Function</span>
+                  <button class="help-btn" type="button" data-help-topic="chapterFunction" aria-label="Help with chapter dramatic function" aria-haspopup="dialog" aria-expanded="false">?</button>
+                </div>
+                <button class="btn btn-sm" onclick="Atlas.toggleFullFunctionRecord()">Toggle Full Record</button>
+              </div>
+
+              <div class="function-quick-card">
+                <div class="function-field-group">
+                  <label class="function-field-title">Purpose (Job of this chapter)</label>
+                  <input type="text" class="function-input" id="fn-purpose" placeholder="Why does this chapter exist?" onchange="Atlas.saveChapterFunctionField('purpose', this.value)">
+                </div>
+
+                <div class="function-field-group">
+                  <label class="function-field-title">Central Turn (What changes)</label>
+                  <input type="text" class="function-input" id="fn-turn" placeholder="What fundamentally changes?" onchange="Atlas.saveChapterFunctionField('centralTurn', this.value)">
+                </div>
+
+                <div class="function-field-group">
+                  <label class="function-field-title">Reader Knowledge Leaving</label>
+                  <input type="text" class="function-input" id="fn-reader-leaving" placeholder="What does the reader now know/suspect?" onchange="Atlas.saveChapterFunctionField('readerKnowledgeLeaving', this.value)">
+                </div>
+
+                <div class="function-field-group">
+                  <label class="function-field-title">Setup</label>
+                  <input type="text" class="function-input" id="fn-setup" placeholder="Future material prepared here" onchange="Atlas.saveChapterFunctionField('setup', this.value)">
+                </div>
+
+                <div class="function-field-group">
+                  <label class="function-field-title">Payoff</label>
+                  <input type="text" class="function-input" id="fn-payoff" placeholder="Earlier material resolved or transformed" onchange="Atlas.saveChapterFunctionField('payoff', this.value)">
+                </div>
+              </div>
+            </div>
+
+            <!-- EXPANDABLE FULL FUNCTION RECORD -->
+            <div id="full-function-record" style="display: none;" class="inspector-section">
+              <label class="section-label">Expanded Function Record</label>
+
+              <div class="function-field-group">
+                <label class="function-field-title">Entry State</label>
+                <textarea class="function-textarea" id="fn-entry-state" placeholder="What is true when the reader enters?" onchange="Atlas.saveChapterFunctionField('entryState', this.value)"></textarea>
+              </div>
+
+              <div class="function-field-group">
+                <label class="function-field-title">Exit State</label>
+                <textarea class="function-textarea" id="fn-exit-state" placeholder="What is different when the reader leaves?" onchange="Atlas.saveChapterFunctionField('exitState', this.value)"></textarea>
+              </div>
+
+              <div class="function-field-group">
+                <label class="function-field-title">Reader Knowledge Entering</label>
+                <textarea class="function-textarea" id="fn-reader-entering" placeholder="What does the reader already know?" onchange="Atlas.saveChapterFunctionField('readerKnowledgeEntering', this.value)"></textarea>
+              </div>
+
+              <div class="function-field-group">
+                <label class="function-field-title">Opens (Tensions introduced)</label>
+                <input type="text" class="function-input" id="fn-opens" placeholder="Questions/tensions opened" onchange="Atlas.saveChapterFunctionField('opens', this.value)">
+              </div>
+
+              <div class="function-field-group">
+                <label class="function-field-title">Answers (Tensions resolved)</label>
+                <input type="text" class="function-input" id="fn-answers" placeholder="Questions/tensions answered" onchange="Atlas.saveChapterFunctionField('answers', this.value)">
+              </div>
+
+              <div class="function-field-group">
+                <label class="function-field-title">Stakes Movement</label>
+                <input type="text" class="function-input" id="fn-stakes" placeholder="How do stakes shift?" onchange="Atlas.saveChapterFunctionField('stakesMovement', this.value)">
+              </div>
+
+              <div class="function-field-group">
+                <label class="function-field-title">Character Movement</label>
+                <input type="text" class="function-input" id="fn-characters" placeholder="Who changes or relationships shift?" onchange="Atlas.saveChapterFunctionField('characterMovement', this.value)">
+              </div>
+
+              <div class="function-field-group">
+                <label class="function-field-title">Theme / Motif Work</label>
+                <input type="text" class="function-input" id="fn-themes" placeholder="What symbolic systems advance?" onchange="Atlas.saveChapterFunctionField('themeMotifWork', this.value)">
+              </div>
+
+              <div class="function-field-group">
+                <label class="function-field-title">What Would Be Lost?</label>
+                <textarea class="function-textarea" id="fn-lost" placeholder="If this chapter vanished, what breaks?" onchange="Atlas.saveChapterFunctionField('whatWouldBeLost', this.value)"></textarea>
+              </div>
+
+              <div class="function-field-group">
+                <label class="function-field-title">Function Tags</label>
+                <div class="function-tags-wrap" id="fn-tags-container">
+                  <!-- Tag pills rendered by JS -->
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB: SCENES -->
+          <div class="inspector-tab-content" id="tab-scenes" style="display: none;">
+            <div class="inspector-section">
+              <label class="section-label">Scene Units</label>
+              <div id="inspector-scenes-list" style="display: flex; flex-direction: column; gap: 0.5rem;">
+                <p style="font-size: 0.8rem; color: var(--text-muted);">Scene breaks (***) are detected automatically.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB: MOTIFS -->
+          <div class="inspector-tab-content" id="tab-motifs" style="display: none;">
+            <div class="inspector-section">
+              <label class="section-label">Detected Motifs</label>
+              <div id="inspector-motifs-detected" style="display: flex; flex-direction: column; gap: 0.4rem;">
+                <!-- Populated by scan -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </main>
+
+    <!-- ====================================================================
+         VIEW 2: COMPARE WORKSPACE
+         ==================================================================== -->
+    <main class="workspace-view compare-workspace" id="view-compare">
+      <div class="compare-top-bar">
+        <div style="display: flex; align-items: center; gap: 0.4rem; padding-right: 0.5rem; border-right: 1px solid var(--border-subtle);">
+          <span style="font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;">Compare</span>
+          <button class="help-btn" type="button" data-help-topic="compareRecovery" aria-label="Help with compare and text recovery" aria-haspopup="dialog" aria-expanded="false">?</button>
+        </div>
+        <div class="compare-picker-group">
+          <label style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Earlier / Base:</label>
+          <select class="compare-select" id="compare-version-a" onchange="Atlas.runComparison()">
+            <!-- Populated with full identity: Name (Type · Date · Words) -->
+          </select>
+        </div>
+
+        <div class="compare-picker-group">
+          <label style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Chapter:</label>
+          <select class="compare-select" id="compare-chapter-select" onchange="Atlas.runComparison()">
+            <!-- Chapters -->
+          </select>
+        </div>
+
+        <div class="compare-picker-group">
+          <label style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Newer / Target:</label>
+          <select class="compare-select" id="compare-version-b" onchange="Atlas.runComparison()">
+            <!-- Populated with full identity -->
+          </select>
+        </div>
+      </div>
+
+      <!-- FILTER & INTENSITY STRIP -->
+      <div class="diff-toolbar-row">
+        <div class="diff-view-tabs">
+          <button class="diff-tab-btn active" id="diff-view-tab-all" onclick="Atlas.setCompareViewMode('all')">What Changed</button>
+          <button class="diff-tab-btn" id="diff-view-tab-survived" onclick="Atlas.setCompareViewMode('survived')">What Survived</button>
+          <button class="diff-tab-btn" id="diff-view-tab-disappeared" onclick="Atlas.setCompareViewMode('disappeared')">What Disappeared</button>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <select id="compare-filter-select" class="theme-mode-select" onchange="Atlas.filterCompareResults()">
+            <option value="all">All Shifts</option>
+            <option value="modified">Rewritten Only</option>
+            <option value="added">Added Only</option>
+            <option value="removed">Removed Only</option>
+            <option value="moved">Moved Only</option>
+          </select>
+
+          <div class="diff-intensity-badge" id="diff-intensity-badge">Minimal — 0% changed</div>
+          <div class="diff-map-strip" id="diff-map-strip" title="Chapter Revision Map"></div>
+        </div>
+      </div>
+
+      <div class="compare-analysis-columns">
+        <!-- METRICS & CONTINUITY SIDEBAR -->
+        <aside class="compare-metrics-sidebar">
+          <div class="inspector-section">
+            <label class="section-label">Structural Shifts</label>
+            <div id="diff-metrics-summary" style="font-size: 0.78rem; line-height: 1.5; color: var(--text-primary);">
+              Select versions to compare.
+            </div>
+          </div>
+
+          <div class="inspector-section">
+            <label class="section-label">Function Shift</label>
+            <div id="compare-function-diff-box" style="font-size: 0.78rem; color: var(--text-secondary); line-height: 1.4;">
+              No function changes detected.
+            </div>
+          </div>
+
+          <div class="inspector-section">
+            <label class="section-label">Continuity Impact</label>
+            <div id="diff-continuity-impact" style="font-size: 0.78rem; color: var(--text-muted); line-height: 1.4;">
+              No motif or character discrepancies.
+            </div>
+          </div>
+        </aside>
+
+        <!-- MAIN DIFF CARDS LIST -->
+        <section class="compare-diff-scroll" id="diff-main-display">
+          <div style="text-align: center; color: var(--text-muted); padding: 3rem;">
+            Select a base version and target version to inspect multi-level revision differences.
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <!-- ====================================================================
+         VIEW 3: FRAGMENTS WORKSPACE
+         ==================================================================== -->
+    <main class="workspace-view" id="view-fragments" style="flex-direction: column; width: 100%; height: 100%; padding: 1.5rem 2rem; overflow-y: auto;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <div>
+          <h2 style="font-family: var(--font-display); font-size: 1.4rem;">Fragments Vault</h2>
+          <p style="font-size: 0.8rem; color: var(--text-secondary);">Prose pieces, excised sections, and floating passages.</p>
+        </div>
+        <button class="btn btn-primary" onclick="Atlas.createNewFragment()">+ New Fragment</button>
+      </div>
+      <div id="fragments-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1rem;">
+        <!-- Populated by JS -->
+      </div>
+    </main>
+
+    <!-- ====================================================================
+         VIEW 4: CHARACTERS WORKSPACE
+         ==================================================================== -->
+    <main class="workspace-view" id="view-characters" style="flex-direction: column; width: 100%; height: 100%; padding: 1.5rem 2rem; overflow-y: auto;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <div>
+          <h2 style="font-family: var(--font-display); font-size: 1.4rem;">Character & Figure Tracking</h2>
+          <p style="font-size: 0.8rem; color: var(--text-secondary);">Character definitions, roles, and manuscript appearances.</p>
+        </div>
+        <button class="btn btn-primary" onclick="Atlas.scanCharacterAppearances()">Scan Appearances</button>
+      </div>
+      <div id="characters-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem;">
+        <!-- Populated by JS -->
+      </div>
+    </main>
+
+    <!-- ====================================================================
+         VIEW 5: REFERENCE WORKSPACE (INCLUDES FUNCTION MAP)
+         ==================================================================== -->
+    <main class="workspace-view reference-workspace" id="view-reference">
+      <nav class="ref-subnav">
+        <button class="nav-tab-btn active" onclick="Atlas.switchRefTab('function-map')">🗺️ Function Map</button>
+        <button class="nav-tab-btn" onclick="Atlas.switchRefTab('lexicon')">Lexicon</button>
+        <button class="nav-tab-btn" onclick="Atlas.switchRefTab('motifs')">Motifs</button>
+        <button class="nav-tab-btn" onclick="Atlas.switchRefTab('canon')">Canon</button>
+        <button class="nav-tab-btn" onclick="Atlas.switchRefTab('timeline')">Timeline</button>
+      </nav>
+
+      <div class="ref-content-wrap">
+        <!-- SUB-TAB: FUNCTION MAP -->
+        <div class="ref-pane" id="ref-pane-function-map">
+          <!-- NEUTRAL OBSERVATIONS BANNER -->
+          <div class="observations-box" id="structural-observations-box">
+            <div class="observations-title">Structural Observations (Neutral)</div>
+            <div id="structural-observations-list" style="font-size: 0.8rem; color: var(--text-primary); display: flex; flex-direction: column; gap: 0.3rem;">
+              Scanning manuscript structure...
+            </div>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; gap: 1rem;">
+            <h3 style="font-family: var(--font-display); font-size: 1.15rem;">Manuscript Function Map</h3>
+            <div style="display: flex; gap: 0.5rem;">
+              <select id="map-filter-status" class="theme-mode-select" onchange="Atlas.renderFunctionMap()">
+                <option value="all">All Revision States</option>
+                <option value="Revised">Revised</option>
+                <option value="In Revision">In Revision</option>
+                <option value="Unreviewed">Unreviewed</option>
+                <option value="Locked">Locked</option>
+              </select>
+              <input type="text" id="map-filter-search" class="function-input" placeholder="Search function map..." oninput="Atlas.renderFunctionMap()" style="width: 220px;">
+            </div>
+          </div>
+
+          <table class="function-map-table">
+            <thead>
+              <tr>
+                <th style="width: 140px;">Chapter</th>
+                <th style="width: 110px;">Status</th>
+                <th style="width: 220px;">Purpose</th>
+                <th style="width: 200px;">Central Turn</th>
+                <th style="width: 160px;">Setup</th>
+                <th style="width: 160px;">Payoff</th>
+              </tr>
+            </thead>
+            <tbody id="function-map-tbody">
+              <!-- Populated by JS -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- SUB-TAB: LEXICON -->
+        <div class="ref-pane" id="ref-pane-lexicon" style="display: none;">
+          <h3 style="font-family: var(--font-display); font-size: 1.15rem; margin-bottom: 1rem;">Project Lexicon</h3>
+          <div id="lexicon-content" style="display: flex; flex-direction: column; gap: 1rem;"></div>
+        </div>
+
+        <!-- SUB-TAB: MOTIFS -->
+        <div class="ref-pane" id="ref-pane-motifs" style="display: none;">
+          <h3 style="font-family: var(--font-display); font-size: 1.15rem; margin-bottom: 1rem;">Motif & Symbolic Systems</h3>
+          <div id="motifs-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem;"></div>
+        </div>
+
+        <!-- SUB-TAB: CANON -->
+        <div class="ref-pane" id="ref-pane-canon" style="display: none;">
+          <h3 style="font-family: var(--font-display); font-size: 1.15rem; margin-bottom: 1rem;">Manuscript Canon & Truth Rules</h3>
+          <div id="canon-list" style="display: flex; flex-direction: column; gap: 0.8rem;"></div>
+        </div>
+
+        <!-- SUB-TAB: TIMELINE -->
+        <div class="ref-pane" id="ref-pane-timeline" style="display: none;">
+          <h3 style="font-family: var(--font-display); font-size: 1.15rem; margin-bottom: 1rem;">Chronology & Timeline</h3>
+          <div id="timeline-list" style="display: flex; flex-direction: column; gap: 0.8rem;"></div>
+        </div>
+      </div>
+    </main>
+
+    <!-- ====================================================================
+         VIEW 6: ANALYZE WORKSPACE
+         ==================================================================== -->
+    <main class="workspace-view" id="view-analyze" style="flex-direction: column; width: 100%; height: 100%; padding: 1.5rem 2rem; overflow-y: auto;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <div>
+          <h2 style="font-family: var(--font-display); font-size: 1.4rem;">Manuscript Diagnostics</h2>
+          <p style="font-size: 0.8rem; color: var(--text-secondary);">Cadence, word count distribution, repetition, and scene architecture.</p>
+        </div>
+        <button class="btn btn-primary" onclick="Atlas.runFullDiagnostics()">Run Full Diagnostics</button>
+      </div>
+      <div id="diagnostics-content" style="display: flex; flex-direction: column; gap: 1.5rem;">
+        <!-- Populated by JS -->
+      </div>
+    </main>
+
+    <!-- ====================================================================
+         VIEW 7: VERSIONS WORKSPACE (LINEAGE & HISTORY)
+         ==================================================================== -->
+    <main class="workspace-view versions-workspace" id="view-versions">
+      <div class="versions-header">
+        <div>
+          <div style="display: flex; align-items: center; gap: 0.45rem;">
+            <h2 style="font-family: var(--font-display); font-size: 1.25rem;">Manuscript Versions & Lineage</h2>
+            <button class="help-btn" type="button" data-help-topic="versions" aria-label="Help with manuscript versions and lineage" aria-haspopup="dialog" aria-expanded="false">?</button>
+          </div>
+          <p style="font-size: 0.8rem; color: var(--text-secondary);">Full version identity, working branches, reference drafts, and milestones.</p>
+        </div>
+        <div style="display: flex; gap: 0.6rem;">
+          <button class="btn btn-sm" onclick="Atlas.takeSafetySnapshot()">⚡ Safety Snapshot</button>
+          <button class="btn btn-sm btn-primary" onclick="Atlas.openSaveVersionModal()">+ Save Version / Milestone</button>
+        </div>
+      </div>
+
+      <div class="versions-body" id="versions-container">
+        <!-- Populated by Atlas.renderVersionList() -->
+      </div>
+    </main>
+
+    <!-- ====================================================================
+         VIEW 8: FINAL DRAFT FORMATTER WORKSPACE
+         ==================================================================== -->
+    <main class="workspace-view finaldraft-workspace" id="view-finaldraft">
+      <div class="finaldraft-toolbar">
+        <div class="preset-selector-group">
+          <label style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted);">Preset:</label>
+          <select id="fd-preset-select" class="theme-mode-select" onchange="Atlas.applyFinalDraftPreset(this.value)">
+            <option value="standard">Standard Manuscript — 12pt Times New Roman (Double, 1" Margins)</option>\n            <option value="standard-courier">Standard Manuscript — 12pt Courier (Double, 1" Margins)</option>
+            <option value="clean">Clean Reading Draft (11pt Serif, 1.4 Spacing)</option>
+            <option value="custom">Custom Format</option>
+          </select>
+        </div>
+
+        <div style="display: flex; gap: 0.5rem; align-items: center;">
+          <button class="btn btn-sm" id="btn-snapshot-draft" onclick="Atlas.takeFinalDraftSnapshot()" title="Capture an immutable final draft version milestone">📸 Snapshot Final Draft</button>
+          <button class="btn btn-sm" id="btn-export-markdown" onclick="Atlas.exportAllChaptersMarkdown()">Export Markdown</button>
+          <button class="btn btn-sm" id="btn-export-vault-fd" onclick="Atlas.exportFullVault()">Export Vault (JSON)</button>
+          <button class="btn btn-sm btn-primary" id="btn-print-draft" onclick="Atlas.printFormattedDraft()" title="Print or Save as PDF using standard print styles">🖨️ Print / Save PDF</button>
+        </div>
+      </div>
+
+      <!-- MOBILE SEGMENTED VIEW TOGGLE -->
+      <div class="fd-mobile-toggle-strip" id="fd-mobile-toggle-strip">
+        <button class="fd-mobile-toggle-btn active" id="fd-tab-btn-controls" onclick="Atlas.switchFinalDraftMobileTab('controls')" type="button">⚙️ Controls & Pre-Flight</button>
+        <button class="fd-mobile-toggle-btn" id="fd-tab-btn-preview" onclick="Atlas.switchFinalDraftMobileTab('preview')" type="button">📄 Live Page Preview</button>
+      </div>
+
+      <div class="finaldraft-body">
+        <!-- LEFT: CONTROLS & PRE-FLIGHT -->
+        <aside class="finaldraft-controls-pane">
+          <div class="convention-notice" id="fd-convention-notice">
+            <strong>Standard Manuscript:</strong> conventional 12pt serif (or monospace Courier); common publishing convention; verify recipient requirements. Every value remains editable.
+          </div>
+
+          <!-- FORMATTING CONTROLS -->
+          <div class="preflight-card">
+            <div class="section-label">Formatting Controls</div>
+
+            <div class="function-field-group">
+              <label class="function-field-title">Font Family</label>
+              <select id="fd-font" class="theme-mode-select" onchange="Atlas.updateFinalDraftPreview()">
+                <option value="Courier New, monospace">Courier New (Standard 12pt Monospace)</option>
+                <option value="Times New Roman, serif">Times New Roman (Standard Serif)</option>
+                <option value="Georgia, serif">Georgia (Clean Editorial Serif)</option>
+                <option value="Charter, serif">Charter (Readable Book Serif)</option>
+              </select>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+              <div class="function-field-group">
+                <label class="function-field-title">Font Size</label>
+                <select id="fd-size" class="theme-mode-select" onchange="Atlas.updateFinalDraftPreview()">
+                  <option value="12pt">12 pt (Standard)</option>
+                  <option value="11pt">11 pt</option>
+                  <option value="10.5pt">10.5 pt</option>
+                </select>
+              </div>
+              <div class="function-field-group">
+                <label class="function-field-title">Line Spacing</label>
+                <select id="fd-spacing" class="theme-mode-select" onchange="Atlas.updateFinalDraftPreview()">
+                  <option value="2.0">Double (2.0)</option>
+                  <option value="1.5">1.5 Line Spacing</option>
+                  <option value="1.35">Single / Tight (1.35)</option>
+                </select>
+              </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+              <div class="function-field-group">
+                <label class="function-field-title">Paragraph Indent</label>
+                <select id="fd-indent" class="theme-mode-select" onchange="Atlas.updateFinalDraftPreview()">
+                  <option value="0.5in">0.5 inch (First-line)</option>
+                  <option value="0.3in">0.3 inch</option>
+                  <option value="0">None (Block prose)</option>
+                </select>
+              </div>
+              <div class="function-field-group">
+                <label class="function-field-title">Scene Breaks</label>
+                <select id="fd-scene-breaks" class="theme-mode-select" onchange="Atlas.updateFinalDraftPreview()">
+                  <option value="# centered"># Centered</option>
+                  <option value="* * * centered">* * * Centered</option>
+                  <option value="single blank line">Blank Line</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="function-field-group">
+              <label class="function-field-title">Running Header</label>
+              <input type="text" id="fd-header-text" class="function-input" placeholder="SURNAME / TITLE / " value="SURNAME / TITLE / " oninput="Atlas.updateFinalDraftPreview()">
+            </div>
+
+            <div class="function-field-group" style="flex-direction: row; align-items: center; gap: 0.5rem;">
+              <input type="checkbox" id="fd-include-title-page" checked onchange="Atlas.updateFinalDraftPreview()">
+              <label for="fd-include-title-page" style="font-size: 0.8rem; cursor: pointer;">Include Title Page</label>
+            </div>
+          </div>
+
+          <!-- TITLE PAGE METADATA -->
+          <div class="preflight-card">
+            <div class="section-label">Title Page Details</div>
+            <input type="text" class="function-input" id="tp-title" placeholder="Manuscript Title" value="" oninput="Atlas.updateFinalDraftPreview()">
+            <input type="text" class="function-input" id="tp-subtitle" placeholder="Subtitle" value="" oninput="Atlas.updateFinalDraftPreview()">
+            <input type="text" class="function-input" id="tp-author" placeholder="Author Name" value="" oninput="Atlas.updateFinalDraftPreview()">
+            <input type="text" class="function-input" id="tp-contact" placeholder="Email / Phone" value="" oninput="Atlas.updateFinalDraftPreview()">
+            <input type="text" class="function-input" id="tp-wordcount" placeholder="Approximate Word Count" value="" oninput="Atlas.updateFinalDraftPreview()">
+          </div>
+
+          <!-- CONSISTENCY PRE-FLIGHT REPORT -->
+          <div class="preflight-card">
+            <div class="section-label">
+              <div style="display: flex; align-items: center; gap: 0.45rem;">
+                <span>Consistency Pre-Flight</span>
+                <button class="help-btn" type="button" data-help-topic="preflight" aria-label="Help with consistency pre-flight checks" aria-haspopup="dialog" aria-expanded="false">?</button>
+              </div>
+              <button class="btn btn-sm btn-primary" onclick="Atlas.fixFormattingArtifacts()">Fix Invisible Artifacts</button>
+            </div>
+            <div id="preflight-checklist" style="display: flex; flex-direction: column; gap: 0.45rem;">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+        </aside>
+
+        <!-- RIGHT: LIVE PAGED MANUSCRIPT PREVIEW -->
+        <section class="finaldraft-preview-pane" id="finaldraft-preview-pane">
+          <!-- Populated by Atlas.renderFinalDraftPages() -->
+        </section>
+      </div>
+    </main>
+
+  </div>
+
+  <!-- ====================================================================
+       MODALS
+       ==================================================================== -->
+
+  <!-- READING PREFERENCES MODAL -->
+  <div class="modal-overlay" id="reading-prefs-modal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">Manuscript Typography & Canvas</h3>
+        <button class="btn btn-sm" onclick="Atlas.closeReadingPrefsModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 0.8rem; color: var(--text-secondary);">
+          These settings personalize your private writing environment and do not affect final draft output formatting.
+        </p>
+
+        <div class="function-field-group">
+          <label class="function-field-title">Manuscript Font Style</label>
+          <select id="pref-font-style" class="theme-mode-select" onchange="Atlas.updateReadingPrefs()">
+            <option value="editorial">Editorial Book Serif (Crimson Pro)</option>
+            <option value="classic">Classic Manuscript (Courier Prime, Monospace)</option>
+            <option value="sans">Clean Editorial Sans (DM Sans)</option>
+          </select>
+        </div>
+
+        <div class="function-field-group">
+          <label class="function-field-title">Font Size</label>
+          <select id="pref-font-size" class="theme-mode-select" onchange="Atlas.updateReadingPrefs()">
+            <option value="16px">16px — Compact</option>
+            <option value="18.5px" selected>18.5px — Standard Editorial</option>
+            <option value="21px">21px — Large & Generous</option>
+          </select>
+        </div>
+
+        <div class="function-field-group">
+          <label class="function-field-title">Line Spacing</label>
+          <select id="pref-line-spacing" class="theme-mode-select" onchange="Atlas.updateReadingPrefs()">
+            <option value="1.6">1.6 — Compact</option>
+            <option value="1.78" selected>1.78 — Comfortable Rhythm</option>
+            <option value="2.0">2.0 — Loose / Proof Style</option>
+          </select>
+        </div>
+
+        <div class="function-field-group">
+          <label class="function-field-title">Writing Width</label>
+          <select id="pref-writing-width" class="theme-mode-select" onchange="Atlas.updateReadingPrefs()">
+            <option value="620px">Narrow (approx. 55-60 chars)</option>
+            <option value="740px" selected>Comfortable (approx. 65-75 chars)</option>
+            <option value="920px">Wide</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" onclick="Atlas.closeReadingPrefsModal()">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SAVE VERSION MODAL -->
+  <div class="modal-overlay" id="save-version-modal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">Save Manuscript Version / Milestone</h3>
+        <button class="btn btn-sm" onclick="Atlas.closeSaveVersionModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="function-field-group">
+          <label class="function-field-title">Version Name</label>
+          <input type="text" class="function-input" id="save-ver-name" placeholder="e.g., Structural Pass Complete" oninput="Atlas.checkVersionNameDuplicate(this.value)">
+          <span id="save-ver-warning" style="font-size: 0.72rem; color: #f59e0b; display: none;">Warning: A version with this name already exists. Consider appending a timestamp.</span>
+        </div>
+
+        <div class="function-field-group">
+          <label class="function-field-title">Version Type</label>
+          <select id="save-ver-type" class="theme-mode-select">
+            <option value="Reference Draft">Reference Draft (Frozen milestone)</option>
+            <option value="Working Branch">Working Branch (New active draft)</option>
+            <option value="Master Snapshot">Master Snapshot</option>
+            <option value="Archive">Archive Draft (Preserved earlier state)</option>
+          </select>
+        </div>
+
+        <div class="function-field-group">
+          <label class="function-field-title">Revision Cycle / Pass</label>
+          <input type="text" class="function-input" id="save-ver-cycle" placeholder="e.g., Draft 1, Structural Revision, Polish">
+        </div>
+
+        <div class="function-field-group">
+          <label class="function-field-title">Author Notes / Purpose of Snapshot</label>
+          <textarea class="function-textarea" id="save-ver-notes" placeholder="Why are you taking this snapshot?"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="Atlas.closeSaveVersionModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="Atlas.saveVersionFromModal()">Save Version</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHAPTER HISTORY MODAL -->
+  <div class="modal-overlay" id="chapter-history-modal">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-header">
+        <h3 class="modal-title" id="chapter-history-title">Chapter Revision History</h3>
+        <button class="btn btn-sm" onclick="Atlas.closeChapterHistoryModal()">✕</button>
+      </div>
+      <div class="modal-body" id="chapter-history-body">
+        <!-- Populated by JS -->
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" onclick="Atlas.closeChapterHistoryModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- GLOBAL SEARCH MODAL -->
+  <div class="modal-overlay" id="search-modal">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-header">
+        <h3 class="modal-title">Global Manuscript Search</h3>
+        <button class="btn btn-sm" onclick="Atlas.closeSearchModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <input type="text" class="function-input" id="global-search-input" placeholder="Search manuscript, fragments, versions, canon..." oninput="Atlas.executeGlobalSearch(this.value)">
+        <div id="search-results-container" style="display: flex; flex-direction: column; gap: 0.5rem; max-height: 400px; overflow-y: auto; margin-top: 1rem;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROJECT / SETTINGS MODAL -->
+  <div class="modal-overlay" id="project-profile-modal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 0.45rem;">
+          <h3 class="modal-title">Project & Profiles</h3>
+          <button class="help-btn" type="button" data-help-topic="privacy" aria-label="Help with project storage, privacy, and backups" aria-haspopup="dialog" aria-expanded="false">?</button>
+        </div>
+        <button class="btn btn-sm" onclick="Atlas.closeProfileModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div style="display: flex; flex-direction: column; gap: 0.8rem;">
+          <button class="btn btn-primary" onclick="Atlas.triggerImportChapters()">📥 Upload / Import Chapters (.txt, .md)</button>
+          <button class="btn" onclick="Atlas.closeProfileModal(); Atlas.openCloudSyncModal();">☁️ Cloud & Google Drive Sync...</button>
+          <button class="btn" onclick="Atlas.showNewProjectModal()">+ Create New Blank Project</button>
+          <button class="btn" onclick="Atlas.triggerImportProject()">Import Project Vault (JSON)</button>
+          <button class="btn" onclick="Atlas.exportFullVault()">Export Project Vault (JSON)</button>
+          <button class="btn" onclick="Atlas.loadDemoProject()" style="color: var(--text-muted); font-size: 0.85rem;">Load Fictional Demo ("The Glass Clockmaker")</button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" onclick="Atlas.closeProfileModal()">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- NEW PROJECT MODAL -->
+  <div class="modal-overlay" id="new-project-modal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">New Manuscript Project</h3>
+        <button class="btn btn-sm" onclick="Atlas.closeNewProjectModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="function-field-group">
+          <label class="function-field-title">Title</label>
+          <input type="text" class="function-input" id="new-proj-title" placeholder="e.g., The North Light">
+        </div>
+        <div class="function-field-group">
+          <label class="function-field-title">Author / Pen Name</label>
+          <input type="text" class="function-input" id="new-proj-author" placeholder="e.g., Jane Doe">
+        </div>
+        <div class="function-field-group">
+          <label class="function-field-title">Target Word Count</label>
+          <input type="number" class="function-input" id="new-proj-words" value="75000">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="Atlas.closeNewProjectModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="Atlas.createProjectFromForm()">Create Project</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CLOUD & GOOGLE DRIVE SYNC MODAL -->
+  <div class="modal-overlay" id="cloud-sync-modal">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 0.6rem;">
+          <h3 class="modal-title">☁️ Cloud & Google Drive Sync</h3>
+          <span class="version-type-pill type-working" id="cloud-sync-status-pill">Local Storage Active</span>
+        </div>
+        <button class="btn btn-sm" onclick="Atlas.closeCloudSyncModal()">✕</button>
+      </div>
+      <div class="modal-body" style="display: flex; flex-direction: column; gap: 1.25rem;">
+        <!-- STATUS OVERVIEW BANNER -->
+        <div class="cloud-status-card" id="cloud-status-card">
+          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem;">
+            <div>
+              <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-primary);" id="cloud-status-title">
+                Current Storage: Browser Vault (IndexedDB)
+              </div>
+              <div style="font-size: 0.82rem; color: var(--text-muted); margin-top: 0.25rem;" id="cloud-status-desc">
+                Your manuscript is stored safely offline in your browser, but not yet linked to Google Drive or a cloud-synced folder.
+              </div>
+            </div>
+            <div id="cloud-last-sync-time" style="font-size: 0.75rem; color: var(--text-secondary); text-align: right; font-variant-numeric: tabular-nums;">
+              Never backed up to cloud
+            </div>
+          </div>
+        </div>
+
+        <!-- 3 SYNC & BACKUP MODES -->
+        <div class="cloud-sync-grid">
+          <!-- CARD 1: GOOGLE DRIVE CLOUD SYNC -->
+          <div class="cloud-provider-card" id="gdrive-provider-card">
+            <div class="cloud-card-header">
+              <span class="cloud-card-icon">☁️</span>
+              <div>
+                <strong>Google Drive Integration</strong>
+                <p>Directly backup and restore manuscripts to your personal Google Drive.</p>
+              </div>
+            </div>
+            <div class="cloud-card-body">
+              <p style="font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 0.85rem; line-height: 1.5;">
+                Securely uploads your full manuscript vault snapshot (with historical versions, notes, and characters) to a dedicated <code>Revision Atlas Backups</code> folder on Google Drive.
+              </p>
+              <div id="gdrive-auth-strip" style="display: flex; flex-direction: column; gap: 0.6rem;">
+                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                  <button class="btn btn-primary" id="btn-gdrive-backup" onclick="Atlas.backupToGoogleDrive()">
+                    ☁️ Backup to Google Drive
+                  </button>
+                  <button class="btn" id="btn-gdrive-restore" onclick="Atlas.restoreFromGoogleDrive()">
+                    📥 Restore from Google Drive
+                  </button>
+                </div>
+                <div style="font-size: 0.72rem; color: var(--text-muted);" id="gdrive-auth-status">
+                  100% Client-side Google Drive API connection. No third-party servers store your book.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- CARD 2: LIVE DISK / SYNCED DRIVE FOLDER -->
+          <div class="cloud-provider-card" id="disk-sync-card">
+            <div class="cloud-card-header">
+              <span class="cloud-card-icon">📁</span>
+              <div>
+                <strong>Live Synced Drive / Disk File</strong>
+                <p>Link directly to a file inside your Google Drive, Dropbox, or OneDrive desktop folder.</p>
+              </div>
+            </div>
+            <div class="cloud-card-body">
+              <p style="font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 0.85rem; line-height: 1.5;">
+                Uses the native File System Access API. Every time you press <code>Ctrl+S</code>, Revision Atlas writes directly to that physical file on your disk, which your cloud desktop client automatically syncs.
+              </p>
+              <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                <button class="btn btn-primary" id="btn-link-disk-file" onclick="Atlas.linkLocalDiskFile()">
+                  📁 Connect / Link Disk File
+                </button>
+                <button class="btn" id="btn-unlink-disk-file" onclick="Atlas.unlinkLocalDiskFile()" style="display: none; color: #ef4444; border-color: rgba(239, 68, 68, 0.3);">
+                  Disconnect File
+                </button>
+              </div>
+              <div style="font-size: 0.75rem; color: var(--accent-primary); margin-top: 0.5rem; font-family: monospace; display: none;" id="disk-file-linked-path"></div>
+            </div>
+          </div>
+
+          <!-- CARD 3: PORTABLE VAULT DOWNLOADS -->
+          <div class="cloud-provider-card">
+            <div class="cloud-card-header">
+              <span class="cloud-card-icon">📦</span>
+              <div>
+                <strong>Portable Vault & Offline Exports</strong>
+                <p>Download self-contained backup files to your computer anytime.</p>
+              </div>
+            </div>
+            <div class="cloud-card-body">
+              <p style="font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 0.85rem; line-height: 1.5;">
+                Download portable files that you can keep on flash drives, email as attachments, or import into any instance of Revision Atlas.
+              </p>
+              <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                <button class="btn" onclick="Atlas.exportFullVault()">📦 Download Vault (.atlas.json)</button>
+                <button class="btn" onclick="Atlas.exportAllChaptersMarkdown()">📄 Export Manuscript (.md)</button>
+                <button class="btn" onclick="Atlas.triggerImportProject()">📥 Upload Vault File</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" onclick="Atlas.closeCloudSyncModal()">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SMART MANUSCRIPT IMPORT & STRUCTURING MODAL -->
+  <div class="modal-overlay" id="smart-import-modal">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 0.6rem;">
+          <h3 class="modal-title">Smart Manuscript Ingestion & Structuring</h3>
+          <span class="version-type-pill type-working" id="import-stats-pill">0 Chapters Detected</span>
+        </div>
+        <button class="btn btn-sm" onclick="Atlas.closeSmartImportModal()">✕</button>
+      </div>
+      <div class="modal-body" style="display: flex; flex-direction: column; gap: 1rem;">
+        <div class="convention-notice" id="import-summary-notice" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+          <div>
+            <strong id="import-file-name">Manuscript</strong>: <span id="import-total-words">0</span> words · <span id="import-chapter-count">0</span> chapters identified.
+          </div>
+          <div style="font-size: 0.75rem; color: var(--text-muted);" id="import-split-info">Multi-pattern boundary parser applied.</div>
+        </div>
+
+        <!-- IMPORT PIPELINE CONTROLS -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.75rem; background: var(--bg-surface-elevated); padding: 0.85rem; border-radius: 8px; border: 1px solid var(--border-subtle);">
+          <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.82rem; cursor: pointer; color: var(--text-primary);">
+            <input type="checkbox" id="import-opt-format" checked>
+            <span><strong>Batch Auto-Format:</strong> clean linebreaks & spacing</span>
+          </label>
+          <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.82rem; cursor: pointer; color: var(--text-primary);">
+            <input type="checkbox" id="import-opt-entities" checked>
+            <span><strong>Continuity Scan:</strong> extract characters into canon</span>
+          </label>
+          <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.82rem; cursor: pointer; color: var(--text-primary);">
+            <input type="checkbox" id="import-opt-replace" checked>
+            <span><strong>Fresh Studio:</strong> replace existing chapters</span>
+          </label>
+        </div>
+
+        <!-- DETECTED CONTINUITY CARDS (IF ANY) -->
+        <div id="import-entities-strip" style="display: none; background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 0.6rem 0.85rem;">
+          <div style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.35rem;">Discovered Characters & Figures:</div>
+          <div id="import-entities-tags" style="display: flex; flex-wrap: wrap; gap: 0.35rem;"></div>
+        </div>
+
+        <!-- CHAPTERS STRUCTURAL PREVIEW -->
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <label class="section-label" style="margin: 0;">Detected Manuscript Structure (Review & Edit Titles):</label>
+          <span style="font-size: 0.75rem; color: var(--text-muted);">Double-check chapter divisions before import</span>
+        </div>
+
+        <div id="import-chapters-preview-list" style="display: flex; flex-direction: column; gap: 0.5rem; max-height: 340px; overflow-y: auto; padding-right: 0.25rem;">
+          <!-- Populated by Atlas.renderSmartImportPreview() -->
+        </div>
+      </div>
+      <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center;">
+        <button class="btn" onclick="Atlas.closeSmartImportModal()">Cancel</button>
+        <button class="btn btn-primary" id="btn-confirm-smart-import" onclick="Atlas.commitSmartImport()" style="font-weight: 700; padding: 0.55rem 1.25rem;">⚡ Import & Structure Manuscript</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTEXTUAL HELP POPOVER -->
+  <div id="help-popover" class="help-popover" role="dialog" aria-modal="false" aria-label="Contextual Help" hidden>
+    <div class="help-popover-header">
+      <strong class="help-popover-title" id="help-popover-title">Help Topic</strong>
+      <button class="help-popover-close" id="help-popover-close" type="button" aria-label="Close help">✕</button>
+    </div>
+    <div class="help-popover-body" id="help-popover-body">
+      <!-- Injected from HELP_TOPICS -->
+    </div>
+    <div class="help-popover-footer">
+      <button class="help-popover-link" id="help-popover-guide-link" type="button">Learn more in Guide →</button>
+    </div>
+  </div>
+
+  <!-- STUDIO GUIDE & SHORTCUTS MODAL -->
+  <div class="modal-overlay" id="studio-guide-modal" role="dialog" aria-modal="true" aria-labelledby="studio-guide-title" hidden>
+    <div class="modal-dialog modal-lg guide-dialog">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 0.6rem;">
+          <span style="font-size: 1.25rem;">📖</span>
+          <h3 class="modal-title" id="studio-guide-title">Revision Atlas Studio Guide</h3>
+        </div>
+        <button class="btn btn-sm" id="btn-close-guide" type="button" aria-label="Close Studio Guide">✕</button>
+      </div>
+      <div class="modal-body guide-body">
+        <!-- Search Field -->
+        <div class="guide-search-wrap">
+          <input type="text" id="guide-search-input" class="function-input" placeholder="Search guide (e.g., 'deleted', 'double spacing', 'branching')..." aria-label="Search Studio Guide">
+        </div>
+
+        <!-- Tab Bar -->
+        <div class="guide-tabs" role="tablist" aria-label="Guide Sections">
+          <button class="guide-tab-btn active" role="tab" id="guide-tab-quickstart" aria-selected="true" aria-controls="guide-panel-quickstart" data-tab="quickstart" type="button">1. Quick Start</button>
+          <button class="guide-tab-btn" role="tab" id="guide-tab-writing" aria-selected="false" aria-controls="guide-panel-writing" data-tab="writing" type="button">2. Writing & Formatting</button>
+          <button class="guide-tab-btn" role="tab" id="guide-tab-revision" aria-selected="false" aria-controls="guide-panel-revision" data-tab="revision" type="button">3. Revision & Comparison</button>
+          <button class="guide-tab-btn" role="tab" id="guide-tab-finalization" aria-selected="false" aria-controls="guide-panel-finalization" data-tab="finalization" type="button">4. Finalization & Pre-Flight</button>
+        </div>
+
+        <!-- Tab Panels Container -->
+        <div class="guide-panels" id="guide-panels-container">
+          <!-- Populated from HELP_TOPICS -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DRAWER BACKDROP (MOBILE & TABLET) -->
+  <div id="drawer-backdrop" class="drawer-backdrop" aria-hidden="true"></div>
+
+  <!-- MOBILE BOTTOM NAVIGATION (THUMB ZONE) -->
+  <nav class="mobile-bottom-nav" id="mobile-bottom-nav" aria-label="Mobile Navigation">
+    <button class="mobile-nav-btn active" data-view="write" type="button" aria-label="Write">
+      <span class="mobile-nav-icon">✍️</span>
+      <span class="mobile-nav-label">Write</span>
+    </button>
+    <button class="mobile-nav-btn" data-view="compare" type="button" aria-label="Compare">
+      <span class="mobile-nav-icon">⚖️</span>
+      <span class="mobile-nav-label">Compare</span>
+    </button>
+    <button class="mobile-nav-btn" data-view="fragments" type="button" aria-label="Fragments">
+      <span class="mobile-nav-icon">🗂️</span>
+      <span class="mobile-nav-label">Fragments</span>
+    </button>
+    <button class="mobile-nav-btn" data-view="versions" type="button" aria-label="Versions">
+      <span class="mobile-nav-icon">🌿</span>
+      <span class="mobile-nav-label">Versions</span>
+    </button>
+    <button class="mobile-nav-btn" id="btn-mobile-more" type="button" aria-label="More Workspaces" aria-haspopup="dialog" aria-expanded="false">
+      <span class="mobile-nav-icon">⋯</span>
+      <span class="mobile-nav-label">More</span>
+    </button>
+  </nav>
+
+  <!-- MOBILE MORE WORKSPACES BOTTOM SHEET -->
+  <div class="mobile-more-sheet" id="mobile-more-sheet" role="dialog" aria-modal="true" aria-label="More Workspaces" hidden>
+    <div class="more-sheet-header">
+      <span class="more-sheet-title">Workspaces & Tools</span>
+      <button class="btn btn-sm" id="btn-close-more-sheet" type="button" aria-label="Close menu">✕</button>
+    </div>
+    <div class="more-sheet-grid">
+      <button class="more-sheet-item" data-view="characters" type="button">
+        <span class="more-item-icon">👥</span>
+        <span class="more-item-title">Characters</span>
+        <span class="more-item-desc">Figure tracking & arc continuity</span>
+      </button>
+      <button class="more-sheet-item" data-view="reference" type="button">
+        <span class="more-item-icon">📖</span>
+        <span class="more-item-title">Reference & Map</span>
+        <span class="more-item-desc">Function map, canon & lexicon</span>
+      </button>
+      <button class="more-sheet-item" data-view="finaldraft" type="button">
+        <span class="more-item-icon">📄</span>
+        <span class="more-item-title">Final Draft</span>
+        <span class="more-item-desc">Pre-flight check & PDF formatting</span>
+      </button>
+      <button class="more-sheet-item" data-view="analyze" type="button">
+        <span class="more-item-icon">🔍</span>
+        <span class="more-item-title">Analyze</span>
+        <span class="more-item-desc">Cadence & word diagnostics</span>
+      </button>
+      <button class="more-sheet-item" id="btn-more-cloud" type="button">
+        <span class="more-item-icon">☁️</span>
+        <span class="more-item-title">Cloud & Drive Sync</span>
+        <span class="more-item-desc">Google Drive, linked files & cloud</span>
+      </button>
+      <button class="more-sheet-item" id="btn-more-settings" type="button">
+        <span class="more-item-icon">⚙️</span>
+        <span class="more-item-title">Project & Vault</span>
+        <span class="more-item-desc">Backups, export & profiles</span>
+      </button>
+      <button class="more-sheet-item" id="btn-more-guide" type="button">
+        <span class="more-item-icon">❓</span>
+        <span class="more-item-title">Studio Guide</span>
+        <span class="more-item-desc">Shortcuts & documentation</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- SCRIPTS -->
+  <!-- Profiles: Clean Commercial Default + Fictional Demo -->
+  <script src="profiles/default_template.js"></script>
+  <script src="profiles/demo_profile.js"></script>
+  
+  <!-- Core Engine -->
+  <script src="app.js"></script>
+</body>
+</html>
